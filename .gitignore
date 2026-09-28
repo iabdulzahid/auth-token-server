@@ -1,0 +1,31 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go build output
+/ats
+
+# Test binary, built with go test -c
+*.test
+
+# Go coverage output
+*.out
+coverage.html
+
+# Dependency vendor directory (if not vendoring)
+vendor/
+
+# Environment files — never commit secrets
+.env
+*.env
+
+# Editor and OS artifacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
