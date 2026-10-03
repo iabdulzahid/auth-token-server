@@ -3,7 +3,7 @@ package config_test
 import (
 	"testing"
 
-	"github.com/iabdulzahid/ats/internal/config"
+	"github.com/iabdulzahid/auth-token-server/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

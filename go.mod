@@ -1,4 +1,4 @@
-module github.com/iabdulzahid/ats
+module github.com/iabdulzahid/auth-token-server
 
 go 1.26.0
 
