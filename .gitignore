@@ -29,3 +29,6 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Local docs — learning notes, content drafts, Q&A
+docs/

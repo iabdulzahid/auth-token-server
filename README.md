@@ -173,7 +173,7 @@ Redis SetRevoked (best-effort, post-response)
 | Cache | `redis/go-redis/v9` |
 | Password hashing | `bcrypt` (`golang.org/x/crypto`) |
 | Config | Environment variables only (12-factor) |
-| Logging | `log/slog` (structured JSON) |
+| Logging | `github.com/rs/zerolog` (zero-allocation structured JSON) |
 | Database | PostgreSQL 16 |
 | Cache store | Redis 7 |
 
@@ -268,6 +268,16 @@ Scopes are embedded in the `scope` claim (space-separated). Downstream services 
 | RSA key rotation | Operationally complex; multi-`kid` JWKS serving |
 | Admin API | Requires its own auth model |
 | Anomaly detection / risk scoring | ML/data pipeline — entirely separate problem space |
+
+---
+
+## Design Documents
+
+| Document | What It Covers |
+|----------|---------------|
+| [`docs/ATS-System-Flow.md`](docs/ATS-System-Flow.md) | **Start here** — complete request lifecycle: startup, login, API call, refresh, revoke, Redis vs Postgres model |
+| [`docs/ATS-Cryptography-and-Token-Flow.md`](docs/ATS-Cryptography-and-Token-Flow.md) | RSA key generation, JWKS, JWT minting step-by-step, refresh token generation, downstream verification, key rotation |
+| [`docs/qa/README.md`](docs/qa/README.md) | Engineering Q&A — design decisions explained by domain |
 
 ---
 
