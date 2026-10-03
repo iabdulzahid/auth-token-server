@@ -36,6 +36,8 @@ Redis is **never** the sole decision-maker. A `revoked=true` from Redis is trust
 | `POST` | `/auth/refresh` | Rotate refresh token, issue new access token |
 | `POST` | `/auth/revoke` | Revoke a refresh token |
 | `GET` | `/.well-known/jwks.json` | Public key document for downstream JWT validation |
+| `GET` | `/health` | Liveness — is the process alive? |
+| `GET` | `/ready` | Readiness — is Postgres + Redis reachable? |
 
 ### POST /auth/token — Password Grant
 ```json
@@ -233,9 +235,9 @@ ats/
 │   ├── handler/             # HTTP handlers + Chi router
 │   └── middleware/          # Request logging middleware
 ├── migrations/              # Plain SQL migration files
-├── Dockerfile
-├── docker-compose.yml
-└── .env.example
+├── Dockerfile               # Multi-stage build (coming in Sprint 3)
+├── docker-compose.yml       # Local dev stack: ATS + Postgres + Redis (coming in Sprint 3)
+└── .env.example             # All env vars documented (coming in Sprint 3)
 ```
 
 ---
@@ -269,18 +271,12 @@ Scopes are embedded in the `scope` claim (space-separated). Downstream services 
 | Admin API | Requires its own auth model |
 | Anomaly detection / risk scoring | ML/data pipeline — entirely separate problem space |
 
----
+## Status
 
-## Design Documents
+Currently in active development — **Sprint 1 of 3**.
 
-| Document | What It Covers |
-|----------|---------------|
-| [`docs/ATS-System-Flow.md`](docs/ATS-System-Flow.md) | **Start here** — complete request lifecycle: startup, login, API call, refresh, revoke, Redis vs Postgres model |
-| [`docs/ATS-Cryptography-and-Token-Flow.md`](docs/ATS-Cryptography-and-Token-Flow.md) | RSA key generation, JWKS, JWT minting step-by-step, refresh token generation, downstream verification, key rotation |
-| [`docs/qa/README.md`](docs/qa/README.md) | Engineering Q&A — design decisions explained by domain |
-
----
-
-## Sprint Progress
-
-See [`auth-token-server-sprints.md`](../auth-token-server-sprints.md) for the full sprint plan and per-ST completion status.
+| Sprint | Theme | Status |
+|--------|-------|--------|
+| Sprint 1 | Foundation — config, keys, schema | 🔄 In progress |
+| Sprint 2 | Core logic — store, cache, token | ⏳ Pending |
+| Sprint 3 | Integration + ops — handlers, Docker, tests | ⏳ Pending |
