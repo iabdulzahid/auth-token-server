@@ -98,6 +98,10 @@ type RefreshTokenStore interface {
 	// Insert writes a new refresh token row. Called after token minting.
 	Insert(ctx context.Context, token *RefreshToken) error
 
+	// GetByHash fetches a token row by its hash without locking.
+	// Used by the /auth/revoke handler which does not need a row lock.
+	GetByHash(ctx context.Context, tokenHash string) (*RefreshToken, error)
+
 	// GetByHashForUpdate fetches the row for tokenHash and locks it with
 	// SELECT FOR UPDATE. tx must be an active *sql.Tx.
 	//

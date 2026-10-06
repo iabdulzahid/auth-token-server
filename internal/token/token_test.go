@@ -3,6 +3,8 @@ package token_test
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -83,14 +85,23 @@ func TestMintAccessToken_KidInHeader(t *testing.T) {
 		t.Fatalf("expected 3 JWT parts, got %d", len(parts))
 	}
 
-	// The kid is embedded in the JOSE header (first of the three dot-separated
-	// parts). We don't need to decode it — a JWT string containing the kid
-	// somewhere in it is sufficient proof, because the header is always first.
-	// A more thorough test would decode+unmarshal the header JSON, but that
-	// adds encoding/json complexity for no additional safety here.
-	if !strings.Contains(tokenStr, kid) {
-		t.Errorf("expected kid %q to appear in token string", kid)
+	// The JOSE header is the first dot-separated part of the JWT, base64url-encoded.
+	// Decode it and unmarshal the JSON to check the kid field.
+	headerB64 := parts[0]
+	// base64.RawURLEncoding handles JWT's unpadded base64url.
+	headerBytes, err := base64.RawURLEncoding.DecodeString(headerB64)
+	if err != nil {
+		t.Fatalf("decode JWT header: %v", err)
 	}
+	var header map[string]any
+	if err := json.Unmarshal(headerBytes, &header); err != nil {
+		t.Fatalf("unmarshal JWT header: %v", err)
+	}
+	gotKid, _ := header["kid"].(string)
+	if gotKid != kid {
+		t.Errorf("JWT header kid: got %q, want %q", gotKid, kid)
+	}
+	_ = strings.Contains // keep strings import used elsewhere in the file
 }
 
 // TestMintAccessToken_Expired verifies that ParseAccessToken rejects an

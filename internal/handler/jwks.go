@@ -3,29 +3,20 @@ package handler
 
 import "net/http"
 
-// JWKSHandler returns an HTTP handler that serves the JWKS (JSON Web Key Set) document.
+// JWKS handles GET /.well-known/jwks.json.
 //
-// The JWKS document contains the RSA public key that downstream services use to
-// verify JWT signatures locally — without making a network call to ATS on every request.
+// The response is the pre-built JWKS document (h.JWKSPayload) containing the
+// RSA public key. Built once at startup, served on every request with no
+// per-request allocation.
 //
-// The jwksJSON parameter is a pre-built, immutable byte slice produced at startup by
-// keys.BuildJWKS(). It is built once and reused on every request — no per-request
-// allocation, no repeated marshalling.
+// Cache-Control: public, max-age=3600 tells downstream services they may cache
+// this response for 1 hour. The cache is invalidated on key rotation when the
+// kid changes, causing a kid-miss on verification and a forced re-fetch.
 //
-// Downstream services should:
-//  1. Fetch this endpoint once at startup.
-//  2. Cache the result in memory, indexed by kid.
-//  3. On a kid cache miss (new key rotation), re-fetch this endpoint.
-//
-// This endpoint requires no authentication — the public key is safe to expose.
-func JWKSHandler(jwksJSON []byte) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		// Cache-Control: downstream services may cache the JWKS for up to 1 hour.
-		// This reduces load on ATS while still allowing key rotation to propagate
-		// within a reasonable time window.
-		w.Header().Set("Cache-Control", "public, max-age=3600")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(jwksJSON)
-	}
+// No authentication required — the public key is safe to expose.
+func (h *Handler) JWKS(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(h.JWKSPayload)
 }

@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+// NewStringArray converts a []string to pqStringArray for use in INSERT/UPDATE
+// queries. This is the outward-facing constructor used by handler code that
+// builds store.RefreshToken values.
+func NewStringArray(s []string) pqStringArray {
+	return pqStringArray(s)
+}
+
 // pqStringArray is a []string that implements database/sql's Scanner and
 // driver.Valuer interfaces for PostgreSQL text[] columns.
 //

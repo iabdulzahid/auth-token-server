@@ -44,6 +44,32 @@ func (r *RefreshTokenRepo) Insert(ctx context.Context, token *RefreshToken) erro
 	return nil
 }
 
+// GetByHash fetches a refresh token row by its hash without locking.
+// Used for read-only lookups (e.g. /auth/revoke which does not need rotation protection).
+// Returns ErrNotFound if no row exists for tokenHash.
+func (r *RefreshTokenRepo) GetByHash(ctx context.Context, tokenHash string) (*RefreshToken, error) {
+	const q = `
+		SELECT id, token_hash, subject, subject_type, scopes,
+		       issued_at, expires_at, revoked, revoked_at
+		FROM   refresh_tokens
+		WHERE  token_hash = $1`
+
+	row := r.db.QueryRowContext(ctx, q, tokenHash)
+
+	var rt RefreshToken
+	err := row.Scan(
+		&rt.ID, &rt.TokenHash, &rt.Subject, &rt.SubjectType, &rt.Scopes,
+		&rt.IssuedAt, &rt.ExpiresAt, &rt.Revoked, &rt.RevokedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("GetByHash: %w", err)
+	}
+	return &rt, nil
+}
+
 // GetByHashForUpdate fetches the refresh token row that matches tokenHash
 // and acquires a row-level lock using SELECT FOR UPDATE.
 //

@@ -1,0 +1,83 @@
+version: "3.9"
+
+# ─── Auth Token Server local development stack ────────────────────────────────
+#
+# Usage:
+#   docker compose up          # start all services
+#   docker compose up --build  # rebuild ATS image before starting
+#   docker compose down -v     # stop and delete volumes (wipes DB data)
+#
+# The ATS service depends on postgres and redis being healthy before it starts.
+# On first run, postgres initialises the database and ATS runs migrations.
+#
+# Env vars for ATS are read from .env (copy .env.example → .env and fill in
+# RSA_PRIVATE_KEY_PEM before running).
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ats
+      POSTGRES_PASSWORD: ats_secret
+      POSTGRES_DB:       ats
+    volumes:
+      # Named volume — data persists across `docker compose down` (but not `down -v`).
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      # Expose on localhost only so Postgres is not reachable from outside the machine.
+      # Use this to connect with psql: psql postgres://ats:ats_secret@localhost:5432/ats
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      # pg_isready exits 0 only when Postgres is accepting connections.
+      # The ATS service depends_on.postgres.condition waits for this.
+      test: ["CMD-SHELL", "pg_isready -U ats -d ats"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Auth Token Server ────────────────────────────────────────────────────────
+  ats:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: dev
+        GIT_SHA: local
+    restart: unless-stopped
+    # Load sensitive config from .env file (gitignored).
+    # Copy .env.example to .env and fill in RSA_PRIVATE_KEY_PEM before running.
+    env_file: .env
+    environment:
+      # These non-sensitive values can be set directly here.
+      # They override anything set in .env for the same key.
+      DATABASE_DSN:       postgres://ats:ats_secret@postgres:5432/ats?sslmode=disable
+      REDIS_ADDR:         redis:6379
+      SERVER_ADDR:        ":8080"
+      ACCESS_TOKEN_TTL:   "15m"
+      REFRESH_TOKEN_TTL:  "168h"
+      BCRYPT_COST:        "12"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
